@@ -16,6 +16,9 @@ import uuid
 
 from parser.NBA.create import сreate
 from parser.utilities.transfer import transfer_bet
+from parser.NBA.check import match_bet_check
+from parser.NBA.save import team_table, bet_predict_tables
+from parser.NBA.redact import bet_predict_redact
 
 
 class ParsingNBA(object):
@@ -131,6 +134,39 @@ class ParsingNBA(object):
     def open_matches_link_bet(self, link):
               
         self.driver.get(link)
+
+        split_match_ID = link.split('/')
+        match_ID = split_match_ID[-2]
+
+        if not match_bet_check(match_ID):
+            return 0
+        
+
+        teams_selenium = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.Gamestrip__TeamContainer div.Gamestrip__Info div.Gamestrip__InfoWrapper div.ScoreCell__Truncate h2'))
+        )
+
+        teams = list() # Инициируем массив для записи команд
+
+        for team in teams_selenium: # Записываем команды в наш массив
+            teams.append(team.get_attribute('textContent'))
+
+
+        bets_selenium = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.ubOdK div.Kiog a'))
+        )
+
+
+        bets = list() # Инициируем массив для записи команд
+
+
+        for bet in bets_selenium: # Записываем команды в наш массив
+            bets.append(bet.get_attribute('textContent'))
+
+        if len(bets) < 0:
+            return 0
+        
+        bet_predict_tables(match_ID, team_table(teams[0], teams[1]), bet_predict_redact(bets))
 
 
     def open_matches_link_past(self, link):
