@@ -143,7 +143,7 @@ class ParsingNBA(object):
         
 
         teams_selenium = WebDriverWait(self.driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.Gamestrip__TeamContainer div.Gamestrip__Info div.Gamestrip__InfoWrapper div.ScoreCell__Truncate h2'))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.Gamestrip__TeamContainer div.Gamestrip__Info div.Gamestrip__InfoWrapper div.ScoreCell__Truncate h2'))
         )
 
         teams = list() # Инициируем массив для записи команд
@@ -153,9 +153,8 @@ class ParsingNBA(object):
 
 
         bets_selenium = WebDriverWait(self.driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.ubOdK div.Kiog a'))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.ubOdK div.Kiog a')) # Собирает название команд
         )
-
 
         bets = list() # Инициируем массив для записи команд
 
@@ -232,7 +231,10 @@ class ParsingNBA(object):
 
 
     def work_with_HTML(self):
-        hide_HTML = self.driver.find_elements(By.CSS_SELECTOR, 'main#fittPageContainer') # Ищем ссылку на скрытый html
+
+        hide_HTML = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'main#fittPageContainer')) # Ищем ссылку на скрытый html
+        )
 
         for html in hide_HTML: # Вытаскиваем html код из селениума
             other_HTML = html.get_attribute('outerHTML')
@@ -245,7 +247,9 @@ class ParsingNBA(object):
 
                 time.sleep(10)
 
-                hide_HTML = self.driver.find_elements(By.CSS_SELECTOR, 'main#fittPageContainer') # Ищем ссылку на скрытый html
+                hide_HTML = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'main#fittPageContainer')) # Ищем ссылку на скрытый html
+                )
 
                 for html in hide_HTML: # Вытаскиваем html код из селениума
                     other_HTML = html.get_attribute('outerHTML')
