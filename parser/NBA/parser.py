@@ -14,11 +14,13 @@ import time
 
 import uuid
 
-from parser.NBA.create import сreate
 from parser.utilities.transfer import transfer_bet
-from parser.NBA.check import match_bet_check
-from parser.NBA.save import team_table, bet_predict_tables
-from parser.NBA.redact import bet_predict_redact
+
+
+from parser.NBA.create import сreate
+from parser.NBA.check import match_bet_check, match_check, stage_check, total_check
+from parser.NBA.save import team_table, bet_predict_tables, bet_old_resul_tables, bet_resul_tables
+from parser.NBA.redact import bet_predict_redact, bet_redact, old_bet_redact
 
 
 class ParsingNBA(object):
@@ -172,10 +174,98 @@ class ParsingNBA(object):
         
         self.driver.get(link)
 
-        # login_button = WebDriverWait(self.driver, 10).until(
-        #     EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[data-role="login"]'))
-        # )
-        # login_button.click()
+        split_match_ID = link.split('/')
+        match_ID = split_match_ID[-2]
+
+        if not match_check(match_ID):
+            return 0
+
+        teams_selenium = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div.Gamestrip__TeamContainer div.Gamestrip__Info div.Gamestrip__InfoWrapper div.ScoreCell__Truncate h2'))
+        )
+
+        teams = list() # Инициируем массив для записи команд
+
+        for team in teams_selenium: # Записываем команды в наш массив
+            teams.append(team.get_attribute('textContent'))
+
+
+        # Получение данных через HTML и запись в список
+        totals_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div.Gamestrip__Table div.flex div.Table__ScrollerWrapper div.Table__Scroller table.Table tbody.Table__TBODY tr.Table__TR td.Table__TD') # Собирает результаты команд
+        stages_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div[class="ScoreCell__GameNote di"]') # Собираем данные об этапе
+
+        totals = list() # Инициируем массив для результата матча
+        stages = list() # Инициируем массив для этапа
+
+
+        for total in totals_selenium: # Записываем итоговый результат
+            totals.append(total.get_attribute('textContent'))
+
+        for stage in stages_selenium: # Записываем итоговый результат
+            stages.append(stage.get_attribute('textContent'))
+
+
+        if int(totals[int(len(totals)/2)-1]) > int(totals[-1]):
+            resul_team1 = 'Win'
+            resul_team2 = 'Lose'
+        else:
+            resul_team2 = 'Win'
+            resul_team1 = 'Lose'
+
+
+        short_names_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div.Kiog a.mLASH') # Собирает название команд
+        
+        short_names = list() # Инициируем массив для записи команд
+
+        for short_name in short_names_selenium: # Записываем команды в наш массив
+            short_names.append(short_name.get_attribute('textContent'))
+
+
+        bets_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div.ubOdK div.Kiog div.mLASH div') # Собирает название команд
+
+        bets = list() # Инициируем массив для записи команд
+
+        if len(bets_selenium) == 0:
+            bets_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div.GameInfo__BettingContainer div.betting-details-with-logo div.GameInfo__BettingItem') # Собирает результаты ставок
+
+            bet_function = False
+        else:
+            bet_function = True
+
+        for bet in bets_selenium: # Записываем команды в наш массив
+            bets.append(bet.get_attribute('textContent'))
+
+        if bet_function:
+            bet = bet_redact(bets)
+        else:
+            bet = old_bet_redact(bets, short_names)
+
+
+        stage = stage_check(stages)
+
+        if stage == 0:
+            return 0
+        
+        total = total_check(totals)
+        
+        # if not self.open_box_score():
+        #     self.team_table()
+        #     self.match_table()
+        #     self.team_stat_tables()
+
+        #     return 0
+
+        # self.team_table()
+        # self.match_table()
+        # self.player_tables()
+        # self.team_stat_tables()
+
+        if len(bets) > 0:
+            if bet_function:
+                bet_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total, bet)
+            else:
+                bet_old_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total, bet)
+
 
 
     # Вспомогательные функции

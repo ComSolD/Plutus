@@ -61,6 +61,8 @@ class ParsingNBA(object):
 
             self.team_check(teams)
 
+
+
         # Получение данных через HTML и запись в список
         totals_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div.Gamestrip__Table div.flex div.Table__ScrollerWrapper div.Table__Scroller table.Table tbody.Table__TBODY tr.Table__TR td.Table__TD') # Собирает результаты команд
         stages_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div[class="ScoreCell__GameNote di"]') # Собираем данные об этапе
@@ -116,68 +118,10 @@ class ParsingNBA(object):
         self.player_tables()
         self.team_stat_tables()
 
-        if len(bets) > 0:
-            favorite_n_sprean = bets[0].split(' ')
 
-            if favorite_n_sprean[1] == short_names[0]:
-                self.bet_favorite = 'Team1'
-            else:
-                self.bet_favorite = 'Team2'
-            
-            self.bet_spread = float(favorite_n_sprean[2])
-
-            over_n_under_total = bets[1].split(' ')
-            
-            self.bet_total = float(over_n_under_total[-1])
-            self.bet_resul_tables()  
 
 
     # Заполнение таблицы
-
-    def bet_resul_tables(self):
-        conn = sqlite3.connect(f'database/NBA.db')
-        cur = conn.cursor()
-
-
-        cur.execute(f"SELECT bet.match_ID FROM bet WHERE bet.match_ID = '{self.match_ID}';")
-        inf = cur.fetchall()
-
-        if len(inf) != 0:
-            cur.execute(f"SELECT bet.total FROM bet WHERE bet.match_ID = '{self.match_ID}';")
-            total = cur.fetchall()[0][0]
-
-            cur.execute(f"SELECT bet.spread_team1 FROM bet WHERE bet.match_ID = '{self.match_ID}';")
-            spread = cur.fetchall()[0][0]
-
-            if spread > 0:
-                spread_resul = int(self.total_team1) - int(self.total_team2) + spread
-            else:
-                spread_resul = int(self.total_team2) - int(self.total_team1) + spread
-
-
-            cur.execute(f'''UPDATE bet SET ML_resul = '{self.team1_ID if self.resul_team1 == "Win" else self.team2_ID}', total_resul = '{"over" if total < (int(self.total_team1) + int(self.total_team2)) else "under"}', spread_resul = '{self.team1_ID if spread_resul > 0 else self.team2_ID}' WHERE match_ID = '{self.match_ID}';''')
-            conn.commit()
-
-        else:
-
-            bet_ID = str(uuid.uuid4())
-
-            if self.bet_favorite == "Team1":
-                spread_resul = int(self.total_team1) - int(self.total_team2) + self.bet_spread
-
-                team1_spread = self.bet_spread
-                team2_spread = abs(self.bet_spread)
-            else:
-                spread_resul = int(self.total_team2) - int(self.total_team1) + self.bet_spread
-
-                team2_spread = self.bet_spread
-                team1_spread = abs(self.bet_spread)
-                
-            
-
-            cur.execute(f'''INSERT INTO `bet`(bet_ID, match_ID, team1_ID, team2_ID, ML_resul, total, total_resul, spread_team1, spread_team2, spread_resul) VALUES('{bet_ID}', '{self.match_ID}', '{self.team1_ID}', '{self.team2_ID}', '{self.team1_ID if self.resul_team1 == "Win" else self.team2_ID}', {self.bet_total}, '{'over' if self.bet_total < (int(self.total_team1) + int(self.missed_total_team1)) else 'under'}', '{team1_spread}', '{team2_spread}', '{self.team1_ID if spread_resul > 0 else self.team2_ID}');''')
-            conn.commit()
- 
 
     def team_stat_tables(self):
         conn = sqlite3.connect(f'database/NBA.db')
@@ -553,120 +497,9 @@ class ParsingNBA(object):
 
 
 
-    def total_check(self, totals):
-        totals.pop(int(len(totals)/2))
-        totals.pop(0)
-
-        self.quarter1_team1 = int(totals[0])
-        self.quarter2_team1 = int(totals[1])
-        self.quarter3_team1 = int(totals[2])
-        self.quarter4_team1 = int(totals[3])
-        self.missed_quarter1_team1 = int(totals[int(len(totals)/2)])
-        self.missed_quarter2_team1 = int(totals[int(len(totals)/2)+1])
-        self.missed_quarter3_team1 = int(totals[int(len(totals)/2)+2])
-        self.missed_quarter4_team1 = int(totals[int(len(totals)/2)+3])
-        self.total_team1 = self.quarter1_team1 + self.quarter2_team1 + self.quarter3_team1 + self.quarter4_team1
-
-        self.quarter1_team2 = int(totals[int(len(totals)/2)])
-        self.quarter2_team2 = int(totals[int(len(totals)/2)+1])
-        self.quarter3_team2 = int(totals[int(len(totals)/2)+2])
-        self.quarter4_team2 = int(totals[int(len(totals)/2)+3])
-        self.missed_quarter1_team2 = int(totals[0])
-        self.missed_quarter2_team2 = int(totals[1])
-        self.missed_quarter3_team2 = int(totals[2])
-        self.missed_quarter4_team2 = int(totals[3])
-        self.total_team2 = self.quarter1_team2 + self.quarter2_team2 + self.quarter3_team2 + self.quarter4_team2
-
-        self.missed_total_team1 = self.total_team2
-        self.missed_total_team2 = self.total_team1
-
-
-    def stage_check(self, stages):
-        if len(stages) == 0:
-            self.game_stage = "regular"
-        else:
-            stages = [x.lower() for x in stages]
-            stages = stages[0].split()
-
-            if 'all-star' in stages:
-                return 0
-            elif 'rising' in stages and 'stars' in stages:
-                return 0
-            elif 'makeup' in stages and not 'east' in stages and not 'west' in stages and not 'finals' in stages:
-                self.game_stage = "regular"
-
-            elif 'play-in' in stages and 'east' in stages and '9th' in stages and '10th' in stages:
-                self.game_stage = "play-in east 9th place vs 10th place"
-            elif 'play-in' in stages and 'west' in stages and '9th' in stages and '10th' in stages:
-                self.game_stage = "play-in west 9th place vs 10th place"
-
-
-            elif 'play-in' in stages and 'east' in stages and '7th' in stages and '8th' in stages:
-                self.game_stage = "play-in east 7th place vs 8th place"
-            elif 'play-in' in stages and 'west' in stages and '7th' in stages and '8th' in stages:
-                self.game_stage = "play-in west 7th place vs 8th place"
-
-            
-            elif 'play-in' in stages and 'east' in stages and '8th' in stages and 'seed' in stages:
-                self.game_stage = "play-in east 8th seed"
-            elif 'play-in' in stages and 'west' in stages and '8th' in stages and 'seed' in stages:
-                self.game_stage = "play-in west 8th seed"
-            
-
-            elif 'east' in stages and '1st' in stages and 'round' in stages:
-                self.game_stage = "east 1st round"
-            elif 'west' in stages and '1st' in stages and 'round' in stages:
-                self.game_stage = "west 1st round"
-
-            elif 'east' in stages and 'semifinals' in stages:
-                self.game_stage = "east semifinals"
-            elif 'west' in stages and 'semifinals' in stages:
-                self.game_stage = "west semifinals"
-
-            elif 'east' in stages and 'finals' in stages:
-                self.game_stage = "east finals"
-            elif 'west' in stages and 'finals' in stages:
-                self.game_stage = "west finals"
-
-            elif 'nba' in stages and 'finals' in stages:
-                self.game_stage = "nba finals"
-
-
-            elif 'in-season' in stages and 'group' in stages:
-                self.game_stage = "regular"
-
-            elif 'in-season' in stages and 'quarterfinals' in stages:
-                self.game_stage = "in-season quarterfinals"
-            
-            elif 'in-season' in stages and 'semifinals' in stages:
-                self.game_stage = "in-season semifinals"
-
-            elif 'in-season' in stages and 'championship' in stages:
-                self.game_stage = "in-season championship"
-
-            else:
-                self.game_stage = "regular"
 
 
 
-
-    def match_check(self):
-
-        try:
-            conn = sqlite3.connect(f'database/NBA.db')
-            cur = conn.cursor()
-
-            cur.execute(f"SELECT match.match_ID FROM match WHERE match.match_ID = '{self.match_ID}';")
-            inf = cur.fetchall()
-
-            if len(inf) != 0:
-                return False
-            else:
-                return True
-        
-        except sqlite3.OperationalError:
-            сreate()
-            return True
 
 
 
