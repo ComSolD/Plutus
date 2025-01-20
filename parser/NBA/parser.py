@@ -6,20 +6,20 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
 
-import numpy as np
-import sqlite3
 
 import datetime
 import time
 
-import uuid
+
+import re
+import json
 
 from parser.utilities.transfer import transfer_bet
 
 
 from parser.NBA.create import сreate
 from parser.NBA.check import match_bet_check, match_check, stage_check, total_check
-from parser.NBA.save import team_table, bet_predict_tables, bet_old_resul_tables, bet_resul_tables
+from parser.NBA.save import team_table, bet_predict_tables, bet_old_resul_tables, bet_resul_tables, match_table
 from parser.NBA.redact import bet_predict_redact, bet_redact, old_bet_redact
 
 
@@ -79,9 +79,18 @@ class ParsingNBA(object):
 
         time.sleep(5)
 
-        self.season = self.driver.title
-        self.season = self.season.split()
-        self.season = self.season[3]
+        date = datetime.datetime.strptime(self.date_match, '%Y-%m-%d')
+
+        year = date.year
+
+        if date.month >= 10:  # Сезон начинается осенью
+            self.season = f"{year}/{int(str(year)[2:]) + 1}"
+        else:
+            self.season = f"{year - 1}/{str(year)[2:]}"
+
+        # self.season = self.driver.title
+        # self.season = self.season.split()
+        # self.season = self.season[3]
 
 
         soup = BeautifulSoup(self.work_with_HTML(),'lxml')
@@ -138,9 +147,9 @@ class ParsingNBA(object):
         self.driver.get(link)
 
         split_match_ID = link.split('/')
-        match_ID = split_match_ID[-2]
+        self.match_ID = split_match_ID[-2]
 
-        if not match_bet_check(match_ID):
+        if not match_bet_check(self.match_ID):
             return 0
         
 
@@ -167,7 +176,7 @@ class ParsingNBA(object):
         if len(bets) < 0:
             return 0
         
-        bet_predict_tables(match_ID, team_table(teams[0], teams[1]), bet_predict_redact(bets))
+        bet_predict_tables(self.match_ID, team_table(teams[0], teams[1]), bet_predict_redact(bets))
 
 
     def open_matches_link_past(self, link):
@@ -175,9 +184,9 @@ class ParsingNBA(object):
         self.driver.get(link)
 
         split_match_ID = link.split('/')
-        match_ID = split_match_ID[-2]
+        self.match_ID = split_match_ID[-2]
 
-        if not match_check(match_ID):
+        if not match_check(self.match_ID):
             return 0
 
         teams_selenium = WebDriverWait(self.driver, 10).until(
@@ -189,6 +198,7 @@ class ParsingNBA(object):
         for team in teams_selenium: # Записываем команды в наш массив
             teams.append(team.get_attribute('textContent'))
 
+        self.teams_ID = team_table(teams[0], teams[1])
 
         # Получение данных через HTML и запись в список
         totals_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div.Gamestrip__Table div.flex div.Table__ScrollerWrapper div.Table__Scroller table.Table tbody.Table__TBODY tr.Table__TR td.Table__TD') # Собирает результаты команд
@@ -248,24 +258,77 @@ class ParsingNBA(object):
         
         total = total_check(totals)
         
-        # if not self.open_box_score():
+        if not self.open_box_score():
         #     self.team_table()
-        #     self.match_table()
+            match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
         #     self.team_stat_tables()
 
-        #     return 0
+            return 0
 
         # self.team_table()
-        # self.match_table()
+        match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
         # self.player_tables()
         # self.team_stat_tables()
 
         if len(bets) > 0:
             if bet_function:
-                bet_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total[-1], bet)
+                bet_resul_tables(self.match_ID, self.teams_ID, resul_team1, total[-1], bet)
             else:
-                bet_old_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total[-1], bet)
+                bet_old_resul_tables(self.match_ID, self.teams_ID, resul_team1, total[-1], bet)
 
+
+    def open_box_score(self):
+        
+        self.driver.get(f'https://www.espn.com/nba/boxscore/_/gameId/{self.match_ID}')
+
+        playerStat_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div[class="Boxscore Boxscore__ResponsiveWrapper"] div.Wrapper div.Boxscore div.ResponsiveTable div.flex div.Table__ScrollerWrapper div.Table__Scroller table.Table tbody.Table__TBODY tr.Table__TR td.Table__TD') # Собираем стартер команд
+
+        player_stats = list()
+
+        for playerStat in playerStat_selenium: # Записываем стартер команд
+            player_stats.append(playerStat.get_attribute('textContent'))
+
+
+        if len(player_stats) == 0:
+            return False
+
+        # time.sleep(2)
+
+        player_link_selenium = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[class="Boxscore Boxscore__ResponsiveWrapper"] div.Wrapper div.Boxscore div.ResponsiveTable div.flex table.Table tbody.Table__TBODY tr[class="Table__TR Table__TR--sm Table__even"] td.Table__TD div.flex a.AnchorLink')) # Собираем игроков команд
+        )
+        
+
+        player_names = list()
+        player_links = list()
+
+        for player_link in player_link_selenium: # Записываем стартер команд
+            player_names.append(player_link.get_attribute('textContent'))
+
+        for player_link in player_link_selenium: # Записываем стартер команд
+            player_links.append(player_link.get_attribute('href'))
+
+        player_IDs = list()
+        new_player_name = list()
+
+        for link in player_links:
+            IDs = link.split('/')
+            player_IDs.append(IDs[7])
+            if len(IDs) == 9:
+                name = IDs[8].split('-')
+                full_name = ''
+                for i in range(0, len(name)):
+                    full_name += name[i].upper()
+                    if i < len(name)-1:
+                        full_name += ' '
+                new_player_name.append(full_name)
+
+        if len(new_player_name) == len(player_names):
+            player_names = new_player_name
+
+        # self.check_stat(player_names, player_stats, player_IDs)
+
+        return True
 
 
     # Вспомогательные функции

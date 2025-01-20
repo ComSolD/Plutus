@@ -235,67 +235,6 @@ class ParsingNBA(object):
             conn.commit()
 
 
-    def match_table(self):
-        conn = sqlite3.connect(f'database/NBA.db')
-        cur = conn.cursor()
-
-        cur.execute(f"INSERT INTO `match`(match_ID, team1_ID, team2_ID, season, stage, date) VALUES('{self.match_ID}', '{self.team1_ID}', '{self.team2_ID}', '{self.season}', '{self.game_stage}', '{self.date_match}')")
-        conn.commit()
-
-
-
-    # Проверка данных
-
-    def open_box_score(self):
-        
-        self.driver.get(f'https://www.espn.com/nba/boxscore/_/gameId/{self.match_ID}')
-
-        playerStat_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div[class="Boxscore Boxscore__ResponsiveWrapper"] div.Wrapper div.Boxscore div.ResponsiveTable div.flex div.Table__ScrollerWrapper div.Table__Scroller table.Table tbody.Table__TBODY tr.Table__TR td.Table__TD') # Собираем стартер команд
-
-        player_stats = list()
-
-        for playerStat in playerStat_selenium: # Записываем стартер команд
-            player_stats.append(playerStat.get_attribute('textContent'))
-
-
-        if len(player_stats) == 0:
-            return False
-
-        # time.sleep(2)
-
-        player_link_selenium = self.driver.find_elements(By.CSS_SELECTOR, 'div[class="Boxscore Boxscore__ResponsiveWrapper"] div.Wrapper div.Boxscore div.ResponsiveTable div.flex table.Table tbody.Table__TBODY tr[class="Table__TR Table__TR--sm Table__even"] td.Table__TD div.flex a.AnchorLink') # Собираем игроков команд
-        
-
-        player_names = list()
-        player_links = list()
-
-        for player_link in player_link_selenium: # Записываем стартер команд
-            player_names.append(player_link.get_attribute('textContent'))
-
-        for player_link in player_link_selenium: # Записываем стартер команд
-            player_links.append(player_link.get_attribute('href'))
-
-        player_IDs = list()
-        new_player_name = list()
-
-        for link in player_links:
-            IDs = link.split('/')
-            player_IDs.append(IDs[7])
-            if len(IDs) == 9:
-                name = IDs[8].split('-')
-                full_name = ''
-                for i in range(0, len(name)):
-                    full_name += name[i].upper()
-                    if i < len(name)-1:
-                        full_name += ' '
-                new_player_name.append(full_name)
-
-        if len(new_player_name) == len(player_names):
-            player_names = new_player_name
-
-        self.check_stat(player_names, player_stats, player_IDs)
-
-        return True
 
 
     def check_stat(self, player_names, player_stats, player_IDs):
