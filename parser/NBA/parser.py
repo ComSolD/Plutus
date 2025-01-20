@@ -262,9 +262,9 @@ class ParsingNBA(object):
 
         if len(bets) > 0:
             if bet_function:
-                bet_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total, bet)
+                bet_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total[-1], bet)
             else:
-                bet_old_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total, bet)
+                bet_old_resul_tables(match_ID, team_table(teams[0], teams[1]), resul_team1, total[-1], bet)
 
 
 

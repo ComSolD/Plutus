@@ -66,7 +66,7 @@ def total_check(totals):
     missed_total_team1 = total_team2
     missed_total_team2 = total_team1
 
-    return [quarter1_team1, missed_quarter1_team1, quarter2_team1, missed_quarter2_team1, quarter3_team1, missed_quarter3_team1, quarter4_team1, missed_quarter4_team1, total_team1, missed_total_team1], [quarter1_team2, missed_quarter1_team2, quarter2_team2, missed_quarter2_team2, quarter3_team2, missed_quarter3_team2, quarter4_team2, missed_quarter4_team2, total_team2, missed_total_team2], 
+    return [quarter1_team1, missed_quarter1_team1, quarter2_team1, missed_quarter2_team1, quarter3_team1, missed_quarter3_team1, quarter4_team1, missed_quarter4_team1, total_team1, missed_total_team1], [quarter1_team2, missed_quarter1_team2, quarter2_team2, missed_quarter2_team2, quarter3_team2, missed_quarter3_team2, quarter4_team2, missed_quarter4_team2, total_team2, missed_total_team2], [totals[int(len(totals)/2-1)], totals[-1]]
 
 
 def stage_check(stages):
