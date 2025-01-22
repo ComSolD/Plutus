@@ -12,6 +12,6 @@ logging.basicConfig(
 if __name__ == "__main__":
     logging.info("Программа запускается")
 
-    ParsingNBA('2023-12-17','2023-12-17').date_cycle()
+    ParsingNBA('2025-01-17','2025-01-17').date_cycle()
     
     logging.info("Программа завершила работу")

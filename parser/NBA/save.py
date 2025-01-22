@@ -1,6 +1,5 @@
 import sqlite3
 import uuid
-import logging
 
 
 def team_table(name_team1, name_team2):
@@ -168,10 +167,86 @@ def bet_old_resul_tables(match_ID, teams, resul_team1, match_total, bet):
         conn.commit()
  
 
-
 def match_table(match_ID, teams, season, stage, date_match):
     conn = sqlite3.connect(f'database/NBA.db')
     cur = conn.cursor()
 
     cur.execute(f"INSERT INTO `match`(match_ID, team1_ID, team2_ID, season, stage, date) VALUES('{match_ID}', '{teams[0]}', '{teams[1]}', '{season}', '{stage}', '{date_match}')")
     conn.commit()
+
+
+def team_stat_tables(match_ID, teams_ID, resul_team1, resul_team2, stat_team1, stat_team2):
+    conn = sqlite3.connect(f'database/NBA.db')
+    cur = conn.cursor()
+
+    # Заполнение таблицы статистики команд
+    team1_Stat_ID = str(uuid.uuid4())
+    cur.execute(f"INSERT INTO `team_stat`(team_stat_ID, match_ID, team_ID, resul, status, FG, trying_FG, three_PT, attempted_three_PT, FT, trying_FT, OREB, DREB, REB, AST, STL, BLK, turnovers, PF) VALUES('{team1_Stat_ID}', '{match_ID}', '{teams_ID[0]}', '{resul_team1}', 'Away', {stat_team1[0][0]}, {stat_team1[0][1]}, {stat_team1[1][0]}, {stat_team1[1][1]}, {stat_team1[2][0]}, {stat_team1[2][1]}, {int(stat_team1[3])}, {int(stat_team1[4])}, {int(stat_team1[5])}, {int(stat_team1[6])}, {int(stat_team1[7])}, {int(stat_team1[8])}, {int(stat_team1[9])}, {int(stat_team1[10])})")
+    conn.commit()
+
+    team2_Stat_ID = str(uuid.uuid4()) 
+    cur.execute(f"INSERT INTO `team_stat`(team_stat_ID, match_ID, team_ID, resul, status, FG, trying_FG, three_PT, attempted_three_PT, FT, trying_FT, OREB, DREB, REB, AST, STL, BLK, turnovers, PF) VALUES('{team2_Stat_ID}', '{match_ID}', '{teams_ID[1]}', '{resul_team2}', 'Home', {stat_team2[0][0]}, {stat_team2[0][1]}, {stat_team2[1][0]}, {stat_team2[1][1]}, {stat_team2[2][0]}, {stat_team2[2][1]}, {int(stat_team2[3])}, {int(stat_team2[4])}, {int(stat_team2[5])}, {int(stat_team2[6])}, {int(stat_team2[7])}, {int(stat_team2[8])}, {int(stat_team2[9])}, {int(stat_team2[10])})")
+    conn.commit()
+
+
+def team_stat_pts_tables(match_ID, teams_ID, total):
+    conn = sqlite3.connect(f'database/NBA.db')
+    cur = conn.cursor()
+
+    # Заполнение таблицы статистики очков команд
+    team1_PTS_Stat_ID = str(uuid.uuid4())
+    cur.execute(f"INSERT INTO `team_pts_stat`(team_pts_stat_ID, match_ID, team_ID, total, totalMissed, total_Q1, total_Q1Missed, total_Q2, total_Q2Missed, total_Q3, total_Q3Missed, total_Q4, total_Q4Missed) VALUES('{team1_PTS_Stat_ID}', '{match_ID}', '{teams_ID[0]}', {total[0][-2]}, {total[0][-1]}, {total[0][0]}, {total[0][1]}, {total[0][2]}, {total[0][3]}, {total[0][4]}, {total[0][5]}, {total[0][6]}, {total[0][7]})")
+    conn.commit()
+
+    team2_PTS_Stat_ID = str(uuid.uuid4())
+    cur.execute(f"INSERT INTO `team_pts_stat`(team_pts_stat_ID, match_ID, team_ID, total, totalMissed, total_Q1, total_Q1Missed, total_Q2, total_Q2Missed, total_Q3, total_Q3Missed, total_Q4, total_Q4Missed) VALUES('{team2_PTS_Stat_ID}', '{match_ID}', '{teams_ID[1]}', {total[1][-2]}, {total[1][-1]}, {total[1][0]}, {total[1][1]}, {total[1][2]}, {total[1][3]}, {total[1][4]}, {total[1][5]}, {total[1][6]}, {total[1][7]})")
+    conn.commit()
+
+
+def player_tables(match_ID, team_ID, starter_team, bench_team):
+    conn = sqlite3.connect(f'database/NBA.db')
+    cur = conn.cursor()
+
+
+    for player_name in starter_team:
+        player_ID = player_name[-1]
+
+        cur.execute(f'''SELECT player_ID FROM `player` WHERE player_ID == "{player_ID}";''')
+
+        feed_back = cur.fetchall()
+
+        if len(feed_back) == 0:
+            cur.execute(f'''INSERT INTO `player`(player_ID, name) VALUES("{player_ID}","{player_name[-2]}")''')
+            conn.commit()
+
+
+        stat_ID = str(uuid.uuid4())
+
+        if player_name[0] == '-':
+            player_name[0] = 0
+
+        cur.execute(f'''INSERT INTO `player_stat`(stat_ID, player_ID, match_ID , team_ID , position, PTS, FG, trying_FG, three_PT, attempted_three_PT, FT, trying_FT, OREB, DREB, REB, AST, STL, BLK, turnovers, PF, plusMinus, MIN) VALUES("{stat_ID}", "{player_ID}", "{match_ID}", "{team_ID}", "Starter", {player_name[13]}, {player_name[1][0]}, {player_name[1][1]}, {player_name[2][0]}, {player_name[2][1]}, {player_name[3][0]}, {player_name[3][1]}, {player_name[4]}, {player_name[5]}, {player_name[6]}, {player_name[7]}, {player_name[8]}, {player_name[9]}, {player_name[10]}, {player_name[11]}, {player_name[12]}, {player_name[0]})''')
+        conn.commit()
+
+    
+
+    # Заполнение таблицы игроков скамейки
+    for player_name in bench_team:
+        player_ID = player_name[-1]
+
+        cur.execute(f'''SELECT player_ID FROM `player` WHERE player_ID == "{player_ID}";''')
+
+        feed_back = cur.fetchall()
+
+        if len(feed_back) == 0:
+            cur.execute(f'''INSERT INTO `player`(player_ID, name) VALUES("{player_ID}","{player_name[-2]}")''')
+            conn.commit()
+
+        stat_ID = str(uuid.uuid4())
+
+        if player_name[0] == '-':
+            player_name[0] = 0
+
+        cur.execute(f'''INSERT INTO `player_stat`(stat_ID, player_ID, match_ID ,team_ID , position, PTS, FG, trying_FG, three_PT, attempted_three_PT, FT, trying_FT, OREB, DREB, REB, AST, STL, BLK, turnovers, PF, plusMinus, MIN) VALUES("{stat_ID}", "{player_ID}", "{match_ID}", "{team_ID}", "Bench", {player_name[13]}, {player_name[1][0]}, {player_name[1][1]}, {player_name[2][0]}, {player_name[2][1]}, {player_name[3][0]}, {player_name[3][1]}, {player_name[4]}, {player_name[5]}, {player_name[6]}, {player_name[7]}, {player_name[8]}, {player_name[9]}, {player_name[10]}, {player_name[11]}, {player_name[12]}, {player_name[0]})''')
+        conn.commit()
+

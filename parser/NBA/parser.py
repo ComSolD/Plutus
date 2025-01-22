@@ -6,20 +6,11 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup
 
-
 import datetime
 import time
 
-
-import re
-import json
-
-from parser.utilities.transfer import transfer_bet
-
-
-from parser.NBA.create import сreate
-from parser.NBA.check import match_bet_check, match_check, stage_check, total_check
-from parser.NBA.save import team_table, bet_predict_tables, bet_old_resul_tables, bet_resul_tables, match_table
+from parser.NBA.check import check_stat, match_bet_check, match_check, stage_check, total_check
+from parser.NBA.save import player_tables, team_stat_pts_tables, team_stat_tables, team_table, bet_predict_tables, bet_old_resul_tables, bet_resul_tables, match_table
 from parser.NBA.redact import bet_predict_redact, bet_redact, old_bet_redact
 
 
@@ -87,10 +78,6 @@ class ParsingNBA(object):
             self.season = f"{year}/{int(str(year)[2:]) + 1}"
         else:
             self.season = f"{year - 1}/{str(year)[2:]}"
-
-        # self.season = self.driver.title
-        # self.season = self.season.split()
-        # self.season = self.season[3]
 
 
         soup = BeautifulSoup(self.work_with_HTML(),'lxml')
@@ -257,24 +244,27 @@ class ParsingNBA(object):
             return 0
         
         total = total_check(totals)
-        
-        if not self.open_box_score():
-        #     self.team_table()
-            match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
-        #     self.team_stat_tables()
-
-            return 0
-
-        # self.team_table()
-        match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
-        # self.player_tables()
-        # self.team_stat_tables()
 
         if len(bets) > 0:
             if bet_function:
                 bet_resul_tables(self.match_ID, self.teams_ID, resul_team1, total[-1], bet)
             else:
                 bet_old_resul_tables(self.match_ID, self.teams_ID, resul_team1, total[-1], bet)
+        
+        if not self.open_box_score():
+            match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
+
+            team_stat_pts_tables(self.match_ID, self.teams_ID, total)
+
+            return 0
+
+        match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
+
+        team_stat_pts_tables(self.match_ID, self.teams_ID, total)
+        team_stat_tables(self.match_ID, self.teams_ID, resul_team1, resul_team2, self.stats[0], self.stats[1])
+
+        player_tables(self.match_ID, self.teams_ID[0], self.stats[2], self.stats[4])
+        player_tables(self.match_ID, self.teams_ID[1], self.stats[3], self.stats[5])
 
 
     def open_box_score(self):
@@ -326,7 +316,7 @@ class ParsingNBA(object):
         if len(new_player_name) == len(player_names):
             player_names = new_player_name
 
-        # self.check_stat(player_names, player_stats, player_IDs)
+        self.stats = check_stat(player_names, player_stats, player_IDs)
 
         return True
 
