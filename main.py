@@ -1,4 +1,5 @@
 from parser.NBA.parser import ParsingNBA
+from parser.NHL.parser import ParsingNHL
 import logging
 
 # Настройка логирования
@@ -12,6 +13,6 @@ logging.basicConfig(
 if __name__ == "__main__":
     logging.info("Программа запускается")
 
-    ParsingNBA('2025-01-17','2025-01-17').date_cycle()
+    ParsingNHL('2025-01-16','2025-01-16').date_cycle()
     
     logging.info("Программа завершила работу")

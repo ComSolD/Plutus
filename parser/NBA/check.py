@@ -23,22 +23,21 @@ def match_bet_check(match_ID):
     
 
 def match_check(match_ID):
+    try:
+        conn = sqlite3.connect(f'database/NBA.db')
+        cur = conn.cursor()
 
-        try:
-            conn = sqlite3.connect(f'database/NBA.db')
-            cur = conn.cursor()
+        cur.execute(f"SELECT match.match_ID FROM match WHERE match.match_ID = '{match_ID}';")
+        inf = cur.fetchall()
 
-            cur.execute(f"SELECT match.match_ID FROM match WHERE match.match_ID = '{match_ID}';")
-            inf = cur.fetchall()
-
-            if len(inf) != 0:
-                return False
-            else:
-                return True
-        
-        except sqlite3.OperationalError:
-            сreate()
+        if len(inf) != 0:
+            return False
+        else:
             return True
+    
+    except sqlite3.OperationalError:
+        сreate()
+        return True
 
 
 def total_check(totals):

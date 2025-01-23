@@ -2,3 +2,4 @@ selenium
 numpy
 beautifulsoup4
 lxml
+psycopg2
