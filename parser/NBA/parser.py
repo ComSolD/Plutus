@@ -245,15 +245,14 @@ class ParsingNBA(object):
         
         total = total_check(totals)
 
+        if not self.open_box_score():
+            return 0
+
         if len(bets) > 0:
             if bet_function:
                 bet_resul_tables(self.match_ID, self.teams_ID, resul_team1, total[-1], bet)
             else:
                 bet_old_resul_tables(self.match_ID, self.teams_ID, resul_team1, total[-1], bet)
-        
-        if not self.open_box_score():
-
-            return 0
 
         match_table(self.match_ID, self.teams_ID, self.season, stage, self.date_match)
 
