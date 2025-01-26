@@ -1,0 +1,21 @@
+<RCC>
+  <qresource prefix="icon">
+    <file>icon/betboom.png</file>
+    <file>icon/espn.png</file>
+    <file>icon/maximized.svg</file>
+    <file>icon/winline.png</file>
+    <file>icon/minimized.svg</file>
+    <file>icon/monitor.png</file>
+    <file>icon/IconArrow.svg</file>
+    <file>icon/IconArrowLeft.svg</file>
+    <file>icon/WindowArrow.svg</file>
+    <file>icon/data_download.svg</file>
+    <file>icon/home.png</file>
+    <file>icon/nhl.png</file>
+    <file>icon/nfl.png</file>
+    <file>icon/nba.png</file>
+    <file>icon/remove.svg</file>
+    <file>icon/close.svg</file>
+    <file>icon/mlb.png</file>
+  </qresource>
+</RCC>

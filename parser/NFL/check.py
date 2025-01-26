@@ -3,7 +3,7 @@ from parser.NFL.create import сreate
 
 import numpy as np
 
-from parser.utilities.transfer import convert_to_list
+from parser.utilities.convert import convert_to_list
 
 
 def match_bet_check(match_ID):

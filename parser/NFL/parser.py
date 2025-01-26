@@ -28,7 +28,6 @@ class ParsingNFL(object):
         self.choise_parser = choise_parser
 
 
-
     def date_cycle(self):
         year_now = datetime.datetime.today()
         year_now = year_now.strftime('%Y')
@@ -39,8 +38,6 @@ class ParsingNFL(object):
 
 
         if len(self.stage) == 1:
-
-            print("Im here")
 
             while True:
 
